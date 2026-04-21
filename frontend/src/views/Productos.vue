@@ -31,7 +31,8 @@ const productoSeleccionado = ref({
     cn: '',
     pvl: 0,
     pvp: 0,
-    iva: 0
+    iva: 0, 
+    categoria: '',
 })
 
 //Logica de busqueda y filtrado 
@@ -134,7 +135,9 @@ const menuItems = [
       class="fixed top-0 left-0 h-full bg-[#109bc5] text-white transition-all duration-300 z-50 flex flex-col shadow-2xl"
     >
       <button @click="isCollapsed = !isCollapsed" class="hidden md:flex absolute -right-3 top-10 bg-[#ff6900] w-6 h-6 rounded-full items-center justify-center border-2 border-white text-[10px] shadow-lg hover:scale-110 transition-transform">
-        <i :class="isCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left'"></i>
+       <span :class="isCollapsed ? 'text-xs' : 'text-xs'">
+          {{ isCollapsed ? '→' : '←' }}
+        </span>
       </button>
 
       <div class="p-6 flex items-center gap-3">
@@ -176,15 +179,14 @@ const menuItems = [
           <table class="w-full text-left whitespace-nowrap">
             <thead class="bg-slate-50 text-slate-400 text-[9px] uppercase font-black tracking-tighter">
               <tr>
-                <th class="p-4 border-b">Producto</th>
+                <th class="p-4 border-b ">Producto</th>
                 <th class="p-4 border-b">Grupo</th>
                 <th class="p-4 border-b">Gama</th>
                 <th class="p-4 border-b">CN</th>
-                <th class="p-4 border-b ">PVL</th>
-                <th class="p-4 border-b ">PVP</th>
                 <th class="p-4 border-b">IVA</th>
-                <th class="p-4 border-b bg-orange-50/50">Importe</th>
-                <th class="p-4 border-b text-center">Acción</th>
+                <th class="p-4 border-b">PVL</th>
+                <th class="p-4 border-b bg-orange-50/50">PVP</th>
+                <th class="p-4 border-b ">Acción</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
@@ -193,19 +195,19 @@ const menuItems = [
                   <p class="font-black text-slate-900 text-sm">{{ p.nombre }}</p>
                 </td>
                 <td class="p-4">
-                  <span class="text-[10px] font-black px-2 py-1 bg-slate-100 rounded-md text-slate-600 uppercase mr-1">{{ p.grupo }}</span>
+                  <span class="text-[10px] text-center font-black px-2 py-1 bg-slate-100 rounded-md text-slate-600 uppercase mr-1">{{ p.grupo }}</span>
                 </td>
                 <td class="p-4">
-                  <span class="text-[10px] font-black px-2 py-1 bg-slate-100 rounded-md text-slate-600 uppercase mr-1">{{ p.gama }}</span>
+                  <span class="text-[10px] text-center font-black px-2 py-1 bg-slate-100 rounded-md text-slate-600 uppercase mr-1">{{ p.gama }}</span>
                 </td>
                 <td class="p-4 font-mono text-xs font-bold text-[#109bc5]">{{ p.cn }}</td>
+                <td class="p-4 text-xs font-bold  text-slate-400">{{ p.iva }}%</td>
+                <td class="p-4 text-xs font-bold  text-slate-600 ">{{ formatMoneda(p.pvl) }}</td>
+                <td class="p-4 text-xs font-bold text-orange-600 bg-orange-50/20">{{ formatMoneda(p.pvp) }}</td>
                 
-                <td class="p-4 text-xs font-bold text-slate-600 ">{{ formatMoneda(p.pvl) }}</td>
-                <td class="p-4 text-xs font-bold text-slate-600">{{ formatMoneda(p.pvp) }}</td>
-                <td class="p-4 text-xs font-bold text-slate-400">{{ p.iva }}%</td>
-                <td class="p-4 text-xs font-bold  text-orange-600  bg-orange-50/20">{{ formatMoneda(p.importe) }}</td>
+                
                 <td class="p-4 text-center">
-                <button @click="abrirEditar(producto)" class="bg-[#ff6900]/10 text-[#109bc5] p-2 rounded-lg hover:bg-[#109bc5] hover:text-white transition-all">
+                <button @click="abrirEditar(p)" class="bg-[#ff6900]/10 text-[#109bc5] p-2 rounded-lg hover:bg-[#109bc5] hover:text-white transition-all">
                   <i class="fas fa-edit"></i>
                 </button>
               </td>
@@ -224,22 +226,59 @@ const menuItems = [
           <button @click="showEditModal = false" class="text-white/50 hover:text-white text-2xl">&times;</button>
         </div>
         <form @submit.prevent="guardarCambios" class="p-6 space-y-4">
-          <div>
-            <label class="text-[10px] font-black  uppercase">Nombre</label>
-            <input v-model="productoSeleccionado.nombre" type="text" class="w-full bg-slate-50 border-none p-3 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#ff964d]">
-          </div>
-          <div class="grid grid-cols-3 gap-3">
-            <div>
-              <label class="text-[10px] font-black  uppercase">PVL (€)</label>
-              <input v-model.number="productoSeleccionado.pvl" type="number" step="0.01" class="w-full bg-slate-50 border-none p-3 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#ff964d]">
+           <div class="grid grid-cols-3 gap-4">
+          
+            <div class="col-span-2">
+              <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Nombre del Producto</label>
+              <input v-model="productoSeleccionado.nombre" type="text" required 
+                class="w-full bg-slate-50 border-none p-3 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#ff964d] outline-none">
             </div>
             <div>
-              <label class="text-[10px] font-black  uppercase">PVP (€)</label>
-              <input v-model.number="productoSeleccionado.pvp" type="number" step="0.01" class="w-full bg-slate-50 border-none p-3 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#ff964d]">
+              <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Grupo</label>
+              <input v-model="productoSeleccionado.grupo" type="text" 
+                class="w-full bg-slate-50 border-none p-3 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#ff964d] outline-none">
             </div>
-             <div>
-              <label class="text-[10px] font-black  uppercase">IMPORTE(€)</label>
-              <input v-model.number="productoSeleccionado.importe" type="number" step="0.01" class="w-full bg-slate-50 border-none p-3 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#ff964d]">
+
+            <div class="col-span-2">
+              <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Gama</label>
+              <input v-model="productoSeleccionado.gama" type="text" 
+                class="w-full bg-slate-50 border-none p-3 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#ff964d] outline-none">
+            </div>
+            <div>
+              <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Presentación</label>
+              <input v-model="productoSeleccionado.presentacion" type="text" placeholder="Ej: 30 caps"
+                class="w-full bg-slate-50 border-none p-3 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#ff964d] outline-none">
+            </div>
+
+            <div>
+              <label class="text-[10px] font-black text-slate-400 uppercase ml-1">CN</label>
+              <input v-model="productoSeleccionado.cn" type="text" required 
+                class="w-full bg-slate-50 border-none p-3 rounded-xl text-sm font-black  focus:ring-2 focus:ring-[#ff964d] outline-none">
+            </div>
+            <div class="col-span-2">
+              <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Categoría</label>
+              <input v-model="productoSeleccionado.categoria" type="text" 
+                class="w-full bg-slate-50 border-none p-3 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#ff964d] outline-none">
+            </div>
+
+            <div>
+              <label class="text-[10px] font-black text-slate-400 uppercase ml-1">PVL (€)</label>
+              <input v-model.number="productoSeleccionado.pvl" type="number" step="0.01" 
+                class="w-full bg-slate-50 border-none p-3 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#ff964d] outline-none">
+            </div>
+            <div>
+              <label class="text-[10px] font-black text-slate-400 uppercase ml-1">PVP (€)</label>
+              <input v-model.number="productoSeleccionado.pvp" type="number" step="0.01" 
+                class="w-full bg-slate-50 border-none p-3 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#ff964d] outline-none">
+            </div>
+            <div>
+              <label class="text-[10px] font-black text-slate-400 uppercase ml-1">IVA (%)</label>
+              <select v-model="productoSeleccionado.iva" 
+                class="w-full bg-slate-50 border-none p-3 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#ff964d] outline-none appearance-none">
+                <option value="4">4%</option>
+                <option value="10">10%</option>
+                <option value="21">21%</option>
+              </select>
             </div>
           </div>
           <button type="submit" class="w-full bg-[#ff964d] text-white py-4 rounded-2xl font-black shadow-lg hover:scale-[1.02] transition-all">Guardar Cambios</button>
@@ -254,31 +293,68 @@ const menuItems = [
           <h3 class="font-black text-xl">Nuevo Producto</h3>
           <button @click="showAddModal = false" class="text-white/50 hover:text-white text-2xl">&times;</button>
         </div>
-        <form @submit.prevent="agregarProducto" class="p-6 space-y-4">
-          <div class="grid grid-cols-3 gap-3">
-             <div class="col-span-2">
-                <label class="text-[10px] font-black  uppercase">Nombre</label>
-                <input v-model="nuevoProducto.nombre" type="text" required class="w-full bg-slate-50 border-none p-3 rounded-xl text-sm font-bold">
-             </div>
-             <div>
-                <label class="text-[10px] font-black  uppercase">CN</label>
-                <input v-model="nuevoProducto.cn" type="text" required class="w-full bg-slate-50 border-none p-3 rounded-xl text-sm font-bold">
-             </div>
-             <div>
-              <label class="text-[10px] font-black  uppercase">PVL (€)</label>
-              <input v-model.number="nuevoProducto.pvl" type="number" step="0.01" class="w-full bg-slate-50 border-none p-3 rounded-xl text-sm font-bold">
-            </div>
-            <div>   
-              <label class="text-[10px] font-black  uppercase">PVP (€)</label>
-              <input v-model.number="nuevoProducto.pvp" type="number" step="0.01" class="w-full bg-slate-50 border-none p-3 rounded-xl text-sm font-bold ">
-            </div>
-             <div>
-                <label class="text-[10px] font-black uppercase">Importe (€)</label>
-                <input v-model.number="nuevoProducto.importe" type="number" step="0.01" class="w-full bg-slate-50 border-none p-3 rounded-xl text-sm font-bold">
-             </div>
+       <form @submit.prevent="agregarProducto" class="p-8 space-y-6">
+        <div class="grid grid-cols-3 gap-4">
+          
+          <div class="col-span-2">
+            <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Nombre del Producto</label>
+            <input v-model="nuevoProducto.nombre" type="text" required 
+              class="w-full bg-slate-50 border-none p-3 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#0f172a] outline-none">
           </div>
-          <button type="submit" class="w-full bg-[#0f172a] text-white py-4 rounded-2xl font-black shadow-lg hover:scale-[1.02] transition-all">Crear Producto</button>
-        </form>
+          <div>
+            <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Grupo</label>
+            <input v-model="nuevoProducto.grupo" type="text" 
+              class="w-full bg-slate-50 border-none p-3 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#0f172a] outline-none">
+          </div>
+
+          <div class="col-span-2">
+            <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Gama</label>
+            <input v-model="nuevoProducto.gama" type="text" 
+              class="w-full bg-slate-50 border-none p-3 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#0f172a] outline-none">
+          </div>
+          <div>
+            <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Presentación</label>
+            <input v-model="nuevoProducto.presentacion" type="text" placeholder="Ej: 30 caps"
+              class="w-full bg-slate-50 border-none p-3 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#0f172a] outline-none">
+          </div>
+
+          <div>
+            <label class="text-[10px] font-black text-slate-400 uppercase ml-1">CN</label>
+            <input v-model="nuevoProducto.cn" type="text" required 
+              class="w-full bg-slate-50 border-none p-3 rounded-xl text-sm font-black  focus:ring-2 focus:ring-[#0f172a] outline-none">
+          </div>
+          <div class="col-span-2">
+            <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Categoría</label>
+            <input v-model="nuevoProducto.categoria" type="text" 
+              class="w-full bg-slate-50 border-none p-3 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#0f172a] outline-none">
+          </div>
+
+          <div>
+            <label class="text-[10px] font-black text-slate-400 uppercase ml-1">PVL (€)</label>
+            <input v-model.number="nuevoProducto.pvl" type="number" step="0.01" 
+              class="w-full bg-slate-50 border-none p-3 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#0f172a] outline-none">
+          </div>
+          <div>
+            <label class="text-[10px] font-black text-slate-400 uppercase ml-1">PVP (€)</label>
+            <input v-model.number="nuevoProducto.pvp" type="number" step="0.01" 
+              class="w-full bg-slate-50 border-none p-3 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#0f172a] outline-none">
+          </div>
+          <div>
+            <label class="text-[10px] font-black text-slate-400 uppercase ml-1">IVA (%)</label>
+            <select v-model="nuevoProducto.iva" 
+              class="w-full bg-slate-50 border-none p-3 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#0f172a] outline-none appearance-none">
+              <option value="4">4%</option>
+              <option value="10">10%</option>
+              <option value="21">21%</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" 
+          class="w-full bg-[#0f172a] text-white py-4 rounded-2xl font-black uppercase tracking-tighter shadow-lg shadow-blue-500/20 hover:scale-[1.01] transition-all duration-300">
+          Crear Producto
+        </button>
+      </form>
       </div>
     </div>
   </div>

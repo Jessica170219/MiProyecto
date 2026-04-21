@@ -19,10 +19,12 @@ header("Content-Type: application/json");
 require_once 'config.php';
 
 $db = Database::getInstance();
-$stmt = $db->prepare("SELECT id, nombre, grupo, gama,presentacion, cn, pvl, pvp, iva, categoria FROM productos");
+$stmt = $db->prepare("SELECT id, categoria, concepto,importe, fecha FROM gastos");
+
 $stmt->execute();
-$productos = $stmt->fetchAll();
+$gastos = $stmt->fetchAll();
 echo json_encode([
     "success" => true, 
-    "productos" => $productos
+    "gastos" => $gastos
     ]);
+?>

@@ -1,4 +1,4 @@
-<?php
+<?php 
 // 1. Permitir que el puerto de Vue (5173) acceda
 header("Access-Control-Allow-Origin: http://localhost:5173");
 
@@ -18,11 +18,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 header("Content-Type: application/json");
 require_once 'config.php';
 
+
+$data = json_decode(file_get_contents("php://input"), true);
+
+if(!$data || empty($data)){
+    echo json_encode(["success" => false, "message" => "No se recibieron datos"]);
+    exit;
+}
+
 $db = Database::getInstance();
-$stmt = $db->prepare("SELECT id, nombre, grupo, gama,presentacion, cn, pvl, pvp, iva, categoria FROM productos");
-$stmt->execute();
-$productos = $stmt->fetchAll();
-echo json_encode([
-    "success" => true, 
-    "productos" => $productos
-    ]);
+$id = $data['id'] ?? 0;
+$stmt = $db->prepare("DELETE FROM gastos WHERE id = ?");
+$result = $stmt->execute([$id]);
+if ($result) {
+    echo json_encode(['success' => true, 'message' => 'Gasto eliminado']);
+} else {
+    echo json_encode(['success' => false, 'message' => 'Error al eliminar']);
+}
+
+?>

@@ -45,7 +45,9 @@ const menuItems = [
         @click="isCollapsed = !isCollapsed"
         class="hidden md:flex absolute -right-3 top-10 bg-[#ff6900] w-6 h-6 rounded-full items-center justify-center border-2 border-white text-[10px] shadow-lg hover:scale-110 transition-transform"
       >
-        <i :class="isCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left'"></i>
+        <span :class="isCollapsed ? 'text-xs' : 'text-xs'">
+          {{ isCollapsed ? '→' : '←' }}
+        </span>
       </button>
 
       <div class="p-6 flex items-center gap-3 overflow-hidden whitespace-nowrap">

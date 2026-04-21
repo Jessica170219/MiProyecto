@@ -6,6 +6,7 @@ import Dashboard from './views/Dashboard.vue'
 import Clientes from './views/Clients.vue'
 import Visitas from './views/Visitas.vue'
 import Productos from './views/Productos.vue'
+import Gastos from './views/Gastos.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 //Definimos las rutas de la aplicacion 
@@ -14,7 +15,8 @@ const routes = [
     { path: '/dashboard', component: Dashboard }, 
     { path: '/clientes', component: Clientes }, 
     { path: '/visitas', component: Visitas },
-    { path:'/productos', component: Productos}
+    { path: '/productos', component: Productos }, 
+    {path: '/gastos', component: Gastos }
 ]
 
 //Creamos la instancia del router

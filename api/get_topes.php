@@ -19,10 +19,27 @@ header("Content-Type: application/json");
 require_once 'config.php';
 
 $db = Database::getInstance();
-$stmt = $db->prepare("SELECT id, nombre, grupo, gama,presentacion, cn, pvl, pvp, iva, categoria FROM productos");
-$stmt->execute();
-$productos = $stmt->fetchAll();
-echo json_encode([
-    "success" => true, 
-    "productos" => $productos
+
+$mes = isset($_GET['mes']) ? $_GET['mes'] : date('Y-m');
+
+$stmt = $db->prepare("SELECT lavados,comida,gasolina FROM topes_mensuales WHERE mes = ?"); 
+$stmt->execute([$mes]);
+$topes =$stmt->fetch(PDO::FETCH_ASSOC);
+
+
+if($topes) {
+    echo json_encode([
+        "success" => true, 
+        "topes" =>[
+            'lavados' => $topes['lavados'],
+            'comida' => $topes['comida'],
+            'gasolina' => $topes['gasolina']
+        ]
     ]);
+} else {
+    echo json_encode([
+        "success" => false, 
+        "message" => "No se encontraron topes para el mes especificado."
+    ]);
+}
+?>
