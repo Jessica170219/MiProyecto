@@ -19,14 +19,22 @@ header("Content-Type: application/json");
 require_once 'config.php';
 
 $db = Database::getInstance();
-$stmt = $db->prepare("SELECT id, fecha, farmacia, observacion FROM visitas");
-$stmt->execute();
+$stmt = $db->prepare("
+    SELECT 
+        p.id,
+        p.fecha,
+        p.cliente_id,
+        p.total,
+        c.farmacia AS farmacia
+    FROM pedidos p
+    INNER JOIN clientes c ON p.cliente_id = c.id
+    ORDER BY p.fecha DESC");
 
-$visitas= $stmt->fetchAll();
+
+$stmt->execute();
+$pedidos= $stmt->fetchAll();
 echo json_encode([
     "success" => true, 
-    "visitas" => $visitas
+    "pedidos" => $pedidos
     ]);
-
-
 ?>

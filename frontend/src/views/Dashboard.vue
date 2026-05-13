@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 
 // isCollapsed controla el ancho en Desktop/Tablet
 const isCollapsed = ref(false) 
@@ -7,19 +7,29 @@ const isCollapsed = ref(false)
 const isMobileMenuOpen = ref(false)
 
 const stats = ref({
-  clientes: 1250,
-  pedidos: 87,
-  objetivos: 75,
-  visitas: 420,
-  gastos: 1240.50
+  clientes: 0,
+  pedidos: 0,
+  objetivos: 0,
+  visitas: 0,
+  gastos: 0
 })
 
-const pedidosRecientes = ref([
-  { id: '#SEID-001', cliente: 'Farmacia Central', fecha: '08 Abr', total: 450.20 },
-  { id: '#SEID-002', cliente: 'Laboratorios Ruiz', fecha: '08 Abr', total: 120.00 },
-  { id: '#SEID-003', cliente: 'Clínica Salud', fecha: '07 Abr', total: 890.15 },
-])
+const pedidosRecientes = ref([])
 
+//Funcion para cargar datos del dashboard
+
+const loadDashboardData = async () => {
+  try {
+    const response = await  fetch('http://localhost/MiProyecto/api/get_dashboard_stats.php')
+    const data = await response.json()
+    stats.value = data.stats
+    pedidosRecientes.value = data.pedidosRecientes
+  } catch (error) {
+    console.error('Error al cargar datos del dashboard:', error)
+  }
+}
+
+// MENU PRINCIPAL (SIDEBAR)
 const menuItems = [
   { name: 'Dashboard', icon: '📊', path: '/dashboard' },
   { name: 'Clientes', icon: '👥', path: '/clientes' },
@@ -30,6 +40,10 @@ const menuItems = [
   {name :' Productos', icon: '🛒', path: '/productos' },
 ]
 </script>
+
+
+
+
 
 <template>
   <div class="min-h-screen bg-[#f0f4f7] font-sans text-slate-700">
@@ -87,13 +101,16 @@ const menuItems = [
       <header class="flex justify-between items-center mb-6 md:mb-10 fixed md:relative top-0 left-0 w-full p-4 md:p-0 bg-[#f0f4f7] md:bg-transparent z-30">
         <div class="flex items-center gap-3">
           <button @click="isMobileMenuOpen = true" class="md:hidden w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-[#109bc5]">
-            <i class="fas fa-bars"></i>
+             ☰
           </button>
           <h1 class="text-xl md:text-2xl font-black text-slate-800">Panel Principal</h1>
         </div>
-        <button class="bg-[#ff6900] text-white px-4 py-2 rounded-xl font-bold shadow-lg text-xs hover:bg-[#e55e00] transition-colors">
-          + <span class="hidden sm:inline">Pedido</span>
-        </button>
+        <router-link 
+          to="/pedidos?add=true" 
+          class="bg-[#ff6900] text-white px-4 py-2 rounded-xl font-bold shadow-lg text-xs hover:bg-[#e55e00] transition-colors inline-block"
+        >
+          + <span class="hidden sm:inline">Añadir Pedido</span>
+        </router-link>
       </header>
 
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-6 mb-8">

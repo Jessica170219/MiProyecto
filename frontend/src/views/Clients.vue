@@ -141,6 +141,17 @@ const guardarCambios = async () => {
     alert('Error de conexión con el servidor');
   }
 };
+
+
+//Modal de detalles 
+const showDetailsModal = ref(false)
+const detallesCliente = ref({})
+
+const verDetalles = (cliente) => {
+  detallesCliente.value = { ...cliente }
+  showDetailsModal.value = true
+}
+
 </script>
 
 <template>
@@ -232,6 +243,7 @@ const guardarCambios = async () => {
                 <button @click="abrirEditar(cliente)" class="bg-[#109bc5]/10 text-[#109bc5] p-2 rounded-lg hover:bg-[#109bc5] hover:text-white transition-all">
                   <i class="fas fa-edit"></i>
                 </button>
+                
               </td>
             </tr>
           </tbody>
@@ -250,74 +262,72 @@ const guardarCambios = async () => {
           </div>
           
           <div class="mt-4 pt-3 border-t border-gray-50 flex justify-between items-center">
-             <a :href="'tel:' + cliente.telefono" class="w-8 h-8 bg-[#00d084]/10 text-[#00d084] rounded-lg flex items-center justify-center">
-               <i class="fas fa-phone-alt text-xs"></i>
-             </a>
-             <button class="text-[10px] font-black text-[#ff6900] uppercase">Detalles</button>
+             <button @click="abrirEditar(cliente)" class="text-[10px] font-black text-[#109bc5] uppercase">Editar</button>
+             <button @click="verDetalles(cliente)" class="text-[10px] font-black text-[#ff6900] uppercase">Detalles</button>
           </div>
         </div>
       </div>
     </main>
 
     <button @click="isMobileMenuOpen = true" class="md:hidden fixed top-4 left-4 w-10 h-10 bg-white rounded-xl shadow-lg flex items-center justify-center text-[#109bc5] z-40">
-      <i class="fas fa-bars"></i>
+      ☰
     </button>
 
 
-    <!--Modal de editar -->
+    <!-----------------------------MODAL DE EDITAR---------------------------------- -->
     <div v-if="showEditModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-  <div @click="showEditModal = false" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+      <div @click="showEditModal = false" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
 
-  <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg z-10 overflow-hidden transform transition-all">
-    <div class="bg-[#109bc5] p-6 text-white flex justify-between items-center">
-      <h3 class="font-black text-xl">Editar Farmacia</h3>
-      <button @click="showEditModal = false" class="text-white/50 hover:text-white text-2xl">&times;</button>
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg z-10 overflow-hidden transform transition-all">
+      <div class="bg-[#109bc5] p-6 text-white flex justify-between items-center">
+        <h3 class="font-black text-xl">Editar Farmacia</h3>
+        <button @click="showEditModal = false" class="text-white/50 hover:text-white text-2xl">&times;</button>
+      </div>
+
+      <form @submit.prevent="guardarCambios" class="p-8 space-y-4">
+        <div>
+          <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Nombre de la Farmacia</label>
+          <input v-model="clienteEditando.farmacia" type="text" class="w-full bg-gray-50 border border-gray-100 p-3 rounded-xl focus:ring-2 focus:ring-[#109bc5] outline-none font-bold text-sm">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Provincia</label>
+            <input v-model="clienteEditando.provincia" type="text" class="w-full bg-gray-50 border border-gray-100 p-3 rounded-xl focus:ring-2 focus:ring-[#109bc5] outline-none font-bold text-sm">
+          </div>
+          <div>
+            <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">C. Postal</label>
+            <input v-model="clienteEditando.codigo_postal" type="text" class="w-full bg-gray-50 border border-gray-100 p-3 rounded-xl focus:ring-2 focus:ring-[#109bc5] outline-none font-bold text-sm">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Municipio</label>
+          <input v-model="clienteEditando.municipio" type="text" class="w-full bg-gray-50 border border-gray-100 p-3 rounded-xl focus:ring-2 focus:ring-[#109bc5] outline-none font-bold text-sm">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Teléfono</label>
+            <input v-model="clienteEditando.telefono" type="text" class="w-full bg-gray-50 border border-gray-100 p-3 rounded-xl focus:ring-2 focus:ring-[#109bc5] outline-none font-bold text-sm">
+          </div>
+          <div>
+            <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Email</label>
+            <input v-model="clienteEditando.email" type="email" class="w-full bg-gray-50 border border-gray-100 p-3 rounded-xl focus:ring-2 focus:ring-[#109bc5] outline-none font-bold text-sm">
+          </div>
+        </div>
+
+        <div class="flex gap-3 pt-4">
+          <button type="button" @click="showEditModal = false" class="flex-1 py-3 font-bold text-gray-400 hover:text-gray-600 transition-colors">Cancelar</button>
+          <button type="submit" class="flex-1 bg-[#ff6900] text-white py-3 rounded-2xl font-black shadow-lg shadow-orange-500/30 hover:scale-105 transition-all">
+            Guardar Cambios
+          </button>
+        </div>
+      </form>
     </div>
-
-    <form @submit.prevent="guardarCambios" class="p-8 space-y-4">
-      <div>
-        <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Nombre de la Farmacia</label>
-        <input v-model="clienteEditando.farmacia" type="text" class="w-full bg-gray-50 border border-gray-100 p-3 rounded-xl focus:ring-2 focus:ring-[#109bc5] outline-none font-bold text-sm">
-      </div>
-
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Provincia</label>
-          <input v-model="clienteEditando.provincia" type="text" class="w-full bg-gray-50 border border-gray-100 p-3 rounded-xl focus:ring-2 focus:ring-[#109bc5] outline-none font-bold text-sm">
-        </div>
-        <div>
-          <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">C. Postal</label>
-          <input v-model="clienteEditando.codigo_postal" type="text" class="w-full bg-gray-50 border border-gray-100 p-3 rounded-xl focus:ring-2 focus:ring-[#109bc5] outline-none font-bold text-sm">
-        </div>
-      </div>
-
-      <div>
-        <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Municipio</label>
-        <input v-model="clienteEditando.municipio" type="text" class="w-full bg-gray-50 border border-gray-100 p-3 rounded-xl focus:ring-2 focus:ring-[#109bc5] outline-none font-bold text-sm">
-      </div>
-
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Teléfono</label>
-          <input v-model="clienteEditando.telefono" type="text" class="w-full bg-gray-50 border border-gray-100 p-3 rounded-xl focus:ring-2 focus:ring-[#109bc5] outline-none font-bold text-sm">
-        </div>
-        <div>
-          <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Email</label>
-          <input v-model="clienteEditando.email" type="email" class="w-full bg-gray-50 border border-gray-100 p-3 rounded-xl focus:ring-2 focus:ring-[#109bc5] outline-none font-bold text-sm">
-        </div>
-      </div>
-
-      <div class="flex gap-3 pt-4">
-        <button type="button" @click="showEditModal = false" class="flex-1 py-3 font-bold text-gray-400 hover:text-gray-600 transition-colors">Cancelar</button>
-        <button type="submit" class="flex-1 bg-[#ff6900] text-white py-3 rounded-2xl font-black shadow-lg shadow-orange-500/30 hover:scale-105 transition-all">
-          Guardar Cambios
-        </button>
-      </div>
-    </form>
-  </div>
 </div>
 
-<!--Modal de añadir-->
+<!---------------------------MODAL DE AÑADIR CLIENTE---------------------------------------->
 <div v-if="showAddModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
   <div @click="showAddModal = false" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
 
@@ -370,5 +380,34 @@ const guardarCambios = async () => {
   </div>
 </div>
 
+
+<!------------------------------MODAL DE DETALLES---------------------------------------------->
+<div v-if="showDetailsModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+  <div @click="showDetailsModal = false" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+  <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm z-10 overflow-hidden transform transition-all">
+    <div class="bg-[#ff6900] p-6 text-white flex justify-between items-center">
+      <h3 class="font-black text-xl">Datos de contacto</h3>
+      <button @click="showDetailsModal = false" class="text-white/50 hover:text-white text-2xl">&times;</button>
+    </div>
+    <div class="p-6 space-y-4">
+      <div>
+        <p class="text-[10px] font-black text-gray-400 uppercase mb-1">Farmacia</p>
+        <p class="font-bold text-slate-800">{{ detallesCliente.farmacia }}</p>
+      </div>
+      <div>
+        <p class="text-[10px] font-black text-gray-400 uppercase mb-1">Teléfono</p>
+        <a :href="'tel:' + detallesCliente.telefono" class="text-[#109bc5] font-bold hover:underline">
+          {{ detallesCliente.telefono }}
+        </a>
+      </div>
+      <div>
+        <p class="text-[10px] font-black text-gray-400 uppercase mb-1">Email</p>
+        <a :href="'mailto:' + detallesCliente.email" class="text-[#109bc5] font-bold hover:underline">
+          {{ detallesCliente.email }}
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
   </div>
 </template>
