@@ -12,7 +12,6 @@ const gastos = ref([])               // Todos los gastos (sin filtrar)
 const mesSeleccionado = ref('')      // Formato YYYY-MM
 const topeActual = reactive({        // Topes del mes seleccionado
   lavados: 0,
-  comida: 0,
   gasolina: 0
 })
 
@@ -20,7 +19,6 @@ const topeActual = reactive({        // Topes del mes seleccionado
 const topesTemp = reactive({
   mes: '',
   lavados: 0,
-  comida: 0,
   gasolina: 0
 })
 
@@ -39,6 +37,7 @@ const gastosFiltrados = computed(() => {
 })
 
 // Gastos por categoría (solo del mes seleccionado)
+// =======LAVADOS ========
 const gastadoLavados = computed(() => {
   return gastosFiltrados.value
     .filter(g => g.categoria === 'lavados')
@@ -47,14 +46,12 @@ const gastadoLavados = computed(() => {
 
 const restanteLavados = computed(() => topeActual.lavados - gastadoLavados.value)
 
-const gastadoComida = computed(() => {
-  return gastosFiltrados.value
-    .filter(g => g.categoria === 'comida')
-    .reduce((sum, g) => sum + Number(g.importe), 0)
+const porcentajeLavados = computed(() => {
+  if (topeActual.lavados === 0) return 0
+  return Math.min((gastadoLavados.value / topeActual.lavados) * 100, 100)
 })
 
-const restanteComida = computed(() => topeActual.comida - gastadoComida.value)
-
+// =======GASOLINA ========
 const gastadoGasolina = computed(() => {
   return gastosFiltrados.value
     .filter(g => g.categoria === 'gasolina')
@@ -63,21 +60,47 @@ const gastadoGasolina = computed(() => {
 
 const restanteGasolina = computed(() => topeActual.gasolina - gastadoGasolina.value)
 
-// Porcentajes para barras
-const porcentajeLavados = computed(() => {
-  if (topeActual.lavados === 0) return 0
-  return Math.min((gastadoLavados.value / topeActual.lavados) * 100, 100)
-})
-
-const porcentajeComida = computed(() => {
-  if (topeActual.comida === 0) return 0
-  return Math.min((gastadoComida.value / topeActual.comida) * 100, 100)
-})
-
 const porcentajeGasolina = computed(() => {
   if (topeActual.gasolina === 0) return 0
   return Math.min((gastadoGasolina.value / topeActual.gasolina) * 100, 100)
 })
+
+// =======COMIDA ========
+const gastosComida = computed(() => {
+  return gastosFiltrados.value.filter(g => g.categoria === 'comida')
+  
+})
+
+const gastadoComida = computed(() => {
+  return gastosComida.value.reduce((sum, g) => sum + Number(g.importe), 0)
+})
+
+const diasComida = computed(() => gastosComida.value.length)
+const DIETA_DIARIA = 26.67
+const subsidioComida = computed(() => diasComida.value * DIETA_DIARIA)
+const diferenciaComida = computed(() => subsidioComida.value - gastadoComida.value)
+const ganaciaComida = computed(() => diferenciaComida.value >= 0)
+
+// ========CENA ========
+const gastosCena = computed(() => {
+  return gastosFiltrados.value.filter(g => g.categoria === 'cena')
+  
+})
+
+const gastadoCena = computed(() => {
+  return gastosCena.value.reduce((sum, g) => sum + Number(g.importe), 0)
+})
+
+const diasCena = computed(() => gastosCena.value.length)
+const subsidioCena = computed(() => diasCena.value * DIETA_DIARIA)
+const diferenciaCena = computed(() => subsidioCena.value - gastadoCena.value)
+const ganaciaCena = computed(() => diferenciaCena.value >= 0)
+
+const mostrarCena = computed(() => gastosCena.value.length > 0)
+
+
+
+
 
 // ==================== API CALLS ====================
 const API_BASE = 'http://localhost/MiProyecto/api'
@@ -105,12 +128,10 @@ const fetchTopes = async (mes) => {
     const data = await response.json()
     if (data.success) {
       topeActual.lavados = data.topes.lavados || 0
-      topeActual.comida = data.topes.comida || 0
       topeActual.gasolina = data.topes.gasolina || 0
     } else {
       // Si no hay topes configurados, poner ceros
       topeActual.lavados = 0
-      topeActual.comida = 0
       topeActual.gasolina = 0
     }
   } catch (error) {
@@ -119,12 +140,12 @@ const fetchTopes = async (mes) => {
 }
 
 // Guardar topes para un mes
-const saveTopes = async (mes, lavados, comida, gasolina) => {
+const saveTopes = async (mes, lavados, gasolina) => {
   try {
     const response = await fetch(`${API_BASE}/save_topes.php`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mes, lavados, comida, gasolina })
+      body: JSON.stringify({ mes, lavados, gasolina })
     })
     const data = await response.json()
     if (!data.success) {
@@ -194,10 +215,7 @@ const abrirModalGasto = () => {
 }
 
 const guardarGasto = async () => {
-  if (!nuevoGasto.concepto || nuevoGasto.concepto.trim() === '') {
-    alert('Por favor, introduce un concepto')
-    return
-  }
+  
   if (!nuevoGasto.importe || nuevoGasto.importe <= 0) {
     alert('El importe debe ser mayor que 0')
     return
@@ -237,7 +255,6 @@ const abrirModalTopes = () => {
   // Cargar los topes actuales del mes seleccionado en el modal
   topesTemp.mes = mesSeleccionado.value
   topesTemp.lavados = topeActual.lavados
-  topesTemp.comida = topeActual.comida
   topesTemp.gasolina = topeActual.gasolina
   showModalTopes.value = true
 }
@@ -247,17 +264,16 @@ const guardarTopes = async () => {
     alert('Selecciona un mes')
     return
   }
-  if (topesTemp.lavados < 0 || topesTemp.comida < 0 || topesTemp.gasolina < 0) {
+  if (topesTemp.lavados < 0 || topesTemp.gasolina < 0) {
     alert('Los topes no pueden ser negativos')
     return
   }
 
-  const success = await saveTopes(topesTemp.mes, topesTemp.lavados, topesTemp.comida, topesTemp.gasolina)
+  const success = await saveTopes(topesTemp.mes, topesTemp.lavados, topesTemp.gasolina)
   if (success) {
     // Si el mes guardado es el mismo que el seleccionado, actualizar topeActual
     if (topesTemp.mes === mesSeleccionado.value) {
       topeActual.lavados = topesTemp.lavados
-      topeActual.comida = topesTemp.comida
       topeActual.gasolina = topesTemp.gasolina
     }
     showModalTopes.value = false
@@ -376,117 +392,98 @@ const menuItems = [
         </div>
       </header>
 
-      <!-- CARDS DE CATEGORÍAS -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 mt-14 md:mt-0">
-        <!-- Card Lavados -->
+       <!-- ========== TARJETAS ========== -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 mt-14 md:mt-0">
+        <!-- Lavados (con tope) -->
         <div class="bg-white rounded-2xl shadow-sm overflow-hidden border-l-8 border-[#109bc5]">
           <div class="p-5">
-            <div class="flex justify-between items-start">
-              <div>
-                <p class="text-gray-400 text-xs font-bold uppercase">Lavados</p>
-                <h3 class="text-2xl font-black text-slate-800 mt-1">{{ gastadoLavados.toFixed(2) }}€</h3>
-                <p class="text-xs text-gray-500 mt-1">de tope {{ topeActual.lavados || 0 }}€</p>
-              </div>
+            <div class="flex justify-between">
+              <div><p class="text-gray-400 text-xs uppercase font-bold">Lavados</p><h3 class="text-2xl font-black">{{ gastadoLavados.toFixed(2) }}€</h3><p class="text-xs text-gray-500">de tope {{ topeActual.lavados }}€</p></div>
               <span class="text-3xl">🧼</span>
             </div>
-            <div class="mt-4 relative pt-1">
-              <div class="overflow-hidden h-2 text-xs flex rounded bg-gray-200">
-                <div :style="{ width: porcentajeLavados + '%' }" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-[#109bc5]"></div>
-              </div>
-              <p class="text-right text-xs text-gray-500 mt-1">
-                Restante: <span :class="restanteLavados < 0 ? 'text-red-500 font-bold' : ''">{{ restanteLavados.toFixed(2) }}€</span>
-              </p>
-            </div>
+            <div class="mt-3"><div class="h-2 bg-gray-200 rounded-full"><div class="h-2 bg-[#109bc5] rounded-full" :style="{ width: porcentajeLavados + '%' }"></div></div><p class="text-right text-xs mt-1">Restante: <span :class="restanteLavados<0?'text-red-500':''">{{ restanteLavados.toFixed(2) }}€</span></p></div>
           </div>
         </div>
 
-        <!-- Card Comida -->
+        <!-- Gasolina (con tope) -->
+        <div class="bg-white rounded-2xl shadow-sm overflow-hidden border-l-8 border-[#ff6900]">
+          <div class="p-5">
+            <div class="flex justify-between">
+              <div><p class="text-gray-400 text-xs uppercase font-bold">Gasolina</p><h3 class="text-2xl font-black">{{ gastadoGasolina.toFixed(2) }}€</h3><p class="text-xs text-gray-500">de tope {{ topeActual.gasolina }}€</p></div>
+              <span class="text-3xl">⛽</span>
+            </div>
+            <div class="mt-3"><div class="h-2 bg-gray-200 rounded-full"><div class="h-2 bg-[#ff6900] rounded-full" :style="{ width: porcentajeGasolina + '%' }"></div></div><p class="text-right text-xs mt-1">Restante: <span :class="restanteGasolina<0?'text-red-500':''">{{ restanteGasolina.toFixed(2) }}€</span></p></div>
+          </div>
+        </div>
+
+        <!-- Comida (dieta) -->
         <div class="bg-white rounded-2xl shadow-sm overflow-hidden border-l-8 border-[#fcb900]">
           <div class="p-5">
-            <div class="flex justify-between items-start">
+            <div class="flex justify-between">
               <div>
-                <p class="text-gray-400 text-xs font-bold uppercase">Comida</p>
-                <h3 class="text-2xl font-black text-slate-800 mt-1">{{ gastadoComida.toFixed(2) }}€</h3>
-                <p class="text-xs text-gray-500 mt-1">de tope {{ topeActual.comida || 0 }}€</p>
+                <p class="text-gray-400 text-xs uppercase font-bold">Comida</p>
+                <h3 class="text-2xl font-black">{{ gastadoComida.toFixed(2) }}€</h3>
+                <p class="text-xs text-gray-500">{{ diasComida }} días · Dieta {{ subsidioComida.toFixed(2) }}€</p>
               </div>
               <span class="text-3xl">🍔</span>
             </div>
-            <div class="mt-4 relative pt-1">
-              <div class="overflow-hidden h-2 text-xs flex rounded bg-gray-200">
-                <div :style="{ width: porcentajeComida + '%' }" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-[#fcb900]"></div>
+            <div class="mt-3">
+              <div class="flex justify-between text-sm font-bold">
+                <span>Diferencia:</span>
+                <span :class="gananciaComida ? 'text-red-600' : 'text-green-600'">
+                  {{ diferenciaComida >= 0 ? '+' : '' }}{{ diferenciaComida.toFixed(2) }}€
+                  ({{ gananciaComida ? 'pérdida' : 'ganancia' }})
+                </span>
               </div>
-              <p class="text-right text-xs text-gray-500 mt-1">
-                Restante: <span :class="restanteComida < 0 ? 'text-red-500 font-bold' : ''">{{ restanteComida.toFixed(2) }}€</span>
-              </p>
             </div>
           </div>
         </div>
 
-        <!-- Card Gasolina -->
-        <div class="bg-white rounded-2xl shadow-sm overflow-hidden border-l-8 border-[#ff6900]">
+        <!-- Cena (opcional, solo si hay gastos) -->
+        <div v-if="mostrarCena" class="bg-white rounded-2xl shadow-sm overflow-hidden border-l-8 border-[#d65799]">
           <div class="p-5">
-            <div class="flex justify-between items-start">
+            <div class="flex justify-between">
               <div>
-                <p class="text-gray-400 text-xs font-bold uppercase">Gasolina</p>
-                <h3 class="text-2xl font-black text-slate-800 mt-1">{{ gastadoGasolina.toFixed(2) }}€</h3>
-                <p class="text-xs text-gray-500 mt-1">de tope {{ topeActual.gasolina || 0 }}€</p>
+                <p class="text-gray-400 text-xs uppercase font-bold">Cena</p>
+                <h3 class="text-2xl font-black">{{ gastadoCena.toFixed(2) }}€</h3>
+                <p class="text-xs text-gray-500">{{ diasCena }} días · Dieta {{ subsidioCena.toFixed(2) }}€</p>
               </div>
-              <span class="text-3xl">⛽</span>
+              <span class="text-3xl">🍽️</span>
             </div>
-            <div class="mt-4 relative pt-1">
-              <div class="overflow-hidden h-2 text-xs flex rounded bg-gray-200">
-                <div :style="{ width: porcentajeGasolina + '%' }" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-[#ff6900]"></div>
+            <div class="mt-3">
+              <div class="flex justify-between text-sm font-bold">
+                <span>Diferencia:</span>
+                <span :class="gananciaCena ? 'text-red-600' : 'text-green-600'">
+                  {{ diferenciaCena >= 0 ? '+' : '' }}{{ diferenciaCena.toFixed(2) }}€
+                  ({{ gananciaCena ? 'pérdida' : 'ganancia' }})
+                </span>
               </div>
-              <p class="text-right text-xs text-gray-500 mt-1">
-                Restante: <span :class="restanteGasolina < 0 ? 'text-red-500 font-bold' : ''">{{ restanteGasolina.toFixed(2) }}€</span>
-              </p>
             </div>
           </div>
         </div>
       </div>
 
       <!-- TABLA DE GASTOS DEL MES SELECCIONADO -->
-      <div class="bg-white rounded-3xl p-5 md:p-8 shadow-sm border border-gray-100 overflow-hidden">
-        <h3 class="font-black text-lg text-slate-800 mb-6 flex items-center gap-2">
-          <span class="w-1.5 h-6 bg-[#d65799] rounded-full"></span>
-          Gastos de {{ mesSeleccionado }}
-        </h3>
-        
+       <div class="bg-white rounded-3xl p-5 md:p-8 shadow-sm border border-gray-100 overflow-hidden">
+        <h3 class="font-black text-lg mb-6">Gastos de {{ mesSeleccionado }}</h3>
         <div class="overflow-x-auto">
-          <table class="w-full text-left">
-            <thead>
-              <tr class="text-gray-400 text-[10px] uppercase tracking-widest border-b border-gray-50">
-                <th class="pb-4">Fecha</th>
-                <th class="pb-4">Categoría</th>
-                <th class="pb-4">Concepto</th>
-                <th class="pb-4">Importe</th>
-                <th class="pb-4 text-center">Acción</th>
-              </tr>
+          <table class="w-full text-left min-w-[350px]">
+            <thead><tr class="text-gray-400 text-[10px] uppercase tracking-widest border-b border-gray-50">
+                <th class="pb-4 px-1 md:px-2">Fecha</th>
+                <th class="pb-4 px-1 md:px-2">Categoría</th>
+                <th class="pb-4 px-1 md:px-2">Concepto</th>
+                <th class="pb-4 px-1 md:px-2">Importe</th>
+                <th class="pb-4 px-1 md:px-2 text-center">Acción</th></tr>
             </thead>
-            <tbody class="divide-y divide-gray-50">
-              <tr v-for="gasto in gastosFiltrados" :key="gasto.id" class="hover:bg-gray-50/50">
-                <td class="py-4 text-xs font-mono text-gray-500">{{ gasto.fecha }}</td>
-                <td class="py-4">
-                  <span class="text-xs font-bold px-2 py-1 rounded-full" 
-                    :class="{
-                      'bg-blue-100 text-blue-800': gasto.categoria === 'lavados',
-                      'bg-yellow-100 text-yellow-800': gasto.categoria === 'comida',
-                      'bg-orange-100 text-orange-800': gasto.categoria === 'gasolina'
-                    }">
-                    {{ gasto.categoria }}
-                  </span>
-                </td>
-                <td class="py-4 text-sm font-bold text-slate-700">{{ gasto.concepto }}</td>
-                <td class="py-4 text-right font-black text-slate-800">{{ Number(gasto.importe).toFixed(2) }}€</td>
-                <td class="py-4 text-center">
-                  <button @click="eliminarGasto(gasto.id)" class="text-red-400 hover:text-red-700 text-sm transition-colors">
-                    🗑️
-                  </button>
-                </td>
+            <tbody>
+              <tr v-for="gasto in gastosFiltrados" :key="gasto.id" class="hover:bg-gray-50">
+                <td class="py-4 text-xs font-mono text-gray-500">{{ new Date(gasto.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }) }}</td>
+                <td><span class="text-xs font-bold px-2 py-1 rounded-full" :class="{'bg-blue-100 text-blue-800': gasto.categoria==='lavados','bg-yellow-100 text-yellow-800': gasto.categoria==='comida','bg-orange-100 text-orange-800': gasto.categoria==='gasolina','bg-pink-100 text-pink-800': gasto.categoria==='cena'}">{{ gasto.categoria }}</span></td>
+                <td class="text-sm font-bold">{{ gasto.concepto || '-' }}</td>
+                <td class="text-center font-black">{{ Number(gasto.importe).toFixed(2) }}€</td>
+                <td class="text-center"><button @click="eliminarGasto(gasto.id)" class="text-red-400">🗑️</button></td>
               </tr>
-              <tr v-if="gastosFiltrados.length === 0">
-                <td colspan="5" class="py-8 text-center text-gray-400">No hay gastos registrados en este mes. ¡Añade el primero!</td>
-              </tr>
+              <tr v-if="gastosFiltrados.length===0"><td colspan="5" class="py-8 text-center text-gray-400">No hay gastos este mes</td></tr>
             </tbody>
           </table>
         </div>
@@ -503,7 +500,9 @@ const menuItems = [
             <select v-model="nuevoGasto.categoria" class="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#109bc5]">
               <option value="lavados">Lavados</option>
               <option value="comida">Comida</option>
+              <option value="cena">Cena</option>
               <option value="gasolina">Gasolina</option>
+
             </select>
           </div>
           <div>
@@ -538,10 +537,6 @@ const menuItems = [
           <div>
             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">🧼 Lavados (€)</label>
             <input v-model.number="topesTemp.lavados" type="number" step="10" min="0" class="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#109bc5]">
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">🍔 Comida (€)</label>
-            <input v-model.number="topesTemp.comida" type="number" step="10" min="0" class="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#fcb900]">
           </div>
           <div>
             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">⛽ Gasolina (€)</label>

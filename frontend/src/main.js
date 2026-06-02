@@ -9,6 +9,7 @@ import Productos from './views/Productos.vue'
 import Gastos from './views/Gastos.vue'
 import Pedidos from './views/Pedidos.vue'
 import Objetivos from './views/Objetivos.vue'
+import Registro from './views/Registro.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 //Definimos las rutas de la aplicacion 
@@ -20,7 +21,9 @@ const routes = [
     { path: '/productos', component: Productos }, 
     { path: '/gastos', component: Gastos },
     { path: '/pedidos', component: Pedidos },
-    {path: '/objetivos', component: Objetivos }
+    { path: '/objetivos', component: Objetivos },
+    { path: '/registro', component: Registro }, 
+    {path: '/login', component: Login }
 ]
 
 //Creamos la instancia del router

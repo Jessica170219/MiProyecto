@@ -14,20 +14,38 @@ const stats = ref({
   gastos: 0
 })
 
-const pedidosRecientes = ref([])
+//Función para cargar los pedidos desde la API
+const ultimosPedidos = ref([])
+const cargandoPedidos = ref(false)
 
-//Funcion para cargar datos del dashboard
-
-const loadDashboardData = async () => {
+const fetchPedidos = async () => {
+  cargandoPedidos.value = true
   try {
-    const response = await  fetch('http://localhost/MiProyecto/api/get_dashboard_stats.php')
-    const data = await response.json()
-    stats.value = data.stats
-    pedidosRecientes.value = data.pedidosRecientes
+    const response = await fetch('http://localhost/MiProyecto/api/get_pedidos.php');
+    const data = await response.json();
+    if (data.success) {
+      ultimosPedidos.value = data.pedidos.slice(0, 10) //solo mostramos los 1o últimos pedidos
+
+    } else {
+      console.error('Error al cargar pedidos:', data.message);
+    }
   } catch (error) {
-    console.error('Error al cargar datos del dashboard:', error)
+    console.error('Error de red al cargar pedidos:', error);
+  } finally {
+    cargandoPedidos.value = false
   }
+    
 }
+
+
+
+
+
+//Carga de funciones
+onMounted(() => {
+  fetchPedidos()
+})
+
 
 // MENU PRINCIPAL (SIDEBAR)
 const menuItems = [
@@ -151,16 +169,16 @@ const menuItems = [
           <table class="w-full text-left">
             <thead>
               <tr class="text-gray-400 text-[10px] uppercase tracking-widest border-b border-gray-50">
-                <th class="pb-4">Ref</th>
+                <th class="pb-4">Fecha</th>
                 <th class="pb-4">Cliente</th>
-                <th class="pb-4 text-right">Monto</th>
+                <th class="pb-4 text-right">Importe</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
-              <tr v-for="pedido in pedidosRecientes" :key="pedido.id" class="hover:bg-gray-50/50">
-                <td class="py-4 text-[11px] font-bold text-gray-400">{{ pedido.id }}</td>
-                <td class="py-4 text-sm font-bold text-slate-700">{{ pedido.cliente }}</td>
-                <td class="py-4 text-right font-black text-slate-800">{{ pedido.total }}€</td>
+              <tr v-for="pedido in ultimosPedidos" :key="pedido.id" class="hover:bg-gray-50/50">
+                <td class="py-4 text-[11px] font-bold text-gray-400">{{ pedido.fecha }}</td>
+                <td class="py-4 text-sm font-bold text-slate-700">{{ pedido.farmacia }}</td>
+                <td class="py-4 text-right font-bold text-[#00d084]">{{ pedido.total }}€</td>
               </tr>
             </tbody>
           </table>
